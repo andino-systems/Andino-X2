@@ -5,7 +5,7 @@ Andino X2
 
 ![Andino X2 - Raspberry Pi on DIN Rail](andino-x2.png)
 
-You will find a detailed [Technical documentation here](doc/README.md) 
+You will find [Technical documentation here](doc/) 
 
 ## Overview
 The [Andino X2][1] is a microcontroller board for the Raspberry Pi in a DIN-rail housing for installation in a control cabinet. It is used to adapt digital inputs and outputs for a voltage of 24 V. The X2 has its own microcontroller for precise signal preprocessing and adaptation of signal generators and actuators. It also contains a Raspberry Pi 3. The inputs and outputs as well as the power supply of the Pi are optimally protected. Communication between the microcontroller and the Pi takes place via the UART interface.
@@ -49,13 +49,8 @@ The integrated, battery-buffered RTC provides the correct time even if no NTP (t
 * Central in the house automation
 * IoT nodes
 
-### How to prepare the Raspbian
-**[See here for more details](doc/README.md#debian)**
 
-### Programming examples
-
-**[Default/Initial Firmware](src/firmware)**   
-
+You will find [Technical documentation here](doc/) 
 
 Author
 -----
