@@ -16,6 +16,7 @@ Tabe of Content
 10. [Communication with Modem (optional)](README.md#communication-with-modem-(optional))
 11. [Drive the LED from Raspberry](README.md#drive-the-led-from-raspberry)
 12. [Firmware for the Atmel Controller](README.md#firmware-for-the-atmel-controller)
+13. [Schemaics of the Andino X2]()(README.md#schematics)
 
 
 ## Documentation
@@ -242,3 +243,8 @@ You will find an example of how to drive the LED from the Atmel in the [Firmware
 ### Firmware for the Atmel Controller
 Please see here   
 [https://github.com/andino-systems/Andino-X2/tree/master/src/firmware](https://github.com/andino-systems/Andino-X2/tree/master/src/firmware)
+
+### Schematics
+
+[Here are the Schematics of the Andino X2](schematic-andino-X2.pdf)
+
