@@ -4,6 +4,17 @@ Tabe of Content
    
 1. [Digital inputs](README.md#digital-inputs)
 2. [Relay outputs](README.md#relay-output)
+3. [Prepare the Debian](README.md#Prepare-the-Debian)
+4. [Enable UART to GPIO](README.md#Enable-UART-to-GPIO)
+5. [Add the Driver for the SPI UART](README.md#Add-the-Driver-for-the-SPI-UART)
+6. [Add a driver for the SPI Ethernet controller](README.md#Add-a-driver-for-the-SPI-Ethernet-controller)
+7. [Communication with the Atmel Controller](README.md#Communication-with-the-Atmel-Controller)
+8. [Atmel Controller <-> Raspberry Pi](README.md#Atmel-Controller-<->-Raspberry-Pi)
+9. [Atmel Controller <-> PC via USB](README.md#Atmel-Controller-<->-PC-via-USB)
+10. [Communication with Modem (optional)](README.md#Communication-with-Modem-(optional))
+11. [Drive the LED from Raspberry](README.md#Drive-the-LED-from-Raspberry)
+12. [Firmware for the Atmel Controller](README.md#Firmware-for-the-Atmel-Controller)
+
 
 ## Documentation
 
@@ -183,6 +194,42 @@ The initial firmware installed on the X2 and the settings can be found here:
 ----------
 ### Drive the LED from Raspberry
 
+The six LED in the Lid are RGB WS2812. There are driven by the GPIO 18.  
+***Please note: Drive the LED with a maximim brightness if 50% (Value 128)!***     
+You can drive the left three LED from the Raspberry and the three left from the Atmel.  
+If you short cut the Jumper J1 you be able to controll all six LED from the Raspberry.
+![Andino X2 - Arduino with Atmel](andino-x2-led.png)
+
+HoTo install the software: 
+
+
+    sudo apt-get update
+    sudo apt-get install gcc make build-essential python-dev git scons swig
+    git clone https://github.com/jgarff/rpi_ws281x
+    cd rpi_ws281x/
+    sudo scons
+    cd python
+    sudo python setup.py build
+    sudo python setup.py install
+
+Now set the configuration in the example file
+
+    cd examples
+    nano lowlevel.py
+
+change the LED COUNT and the LED GPIO and the Brightness:
+
+
+    # LED configuration.
+    LED_CHANNEL = 0
+    LED_COUNT   = 3      # How many LEDs to light.
+    LED_FREQ_HZ = 800000 # Frequency of the LED signal.  Should be 800khz or 400khz.
+    LED_DMA_NUM = 5      # DMA channel to use, can be 0-14.
+    LED_GPIO    = 18	 # GPIO connected to the LED signal line.  Must support PWM!
+    LED_BRIGHTNESS = 128 # Set to 0 for darkest and 255 for brightest
+    LED_INVERT = 0  # Set to 1 to invert the LED signal, good if using NPN
+    
+You will find an example of how to drive the LED from the Atmel in the [Firmware section](https://github.com/andino-systems/Andino-X2/tree/master/src/firmware)
 
 ----------
 ### Firmware for the Atmel Controller
