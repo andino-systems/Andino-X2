@@ -1,19 +1,21 @@
 # Andino X2
 
+Homepage of [Andino X2](https://andino.systems/andino-x2/)
+
 Tabe of Content   
    
 1. [Digital inputs](README.md#digital-inputs)
 2. [Relay outputs](README.md#relay-output)
-3. [Prepare the Debian](README.md#Prepare-the-Debian)
-4. [Enable UART to GPIO](README.md#Enable-UART-to-GPIO)
-5. [Add the Driver for the SPI UART](README.md#Add-the-Driver-for-the-SPI-UART)
-6. [Add a driver for the SPI Ethernet controller](README.md#Add-a-driver-for-the-SPI-Ethernet-controller)
-7. [Communication with the Atmel Controller](README.md#Communication-with-the-Atmel-Controller)
-8. [Atmel Controller <-> Raspberry Pi](README.md#Atmel-Controller-<->-Raspberry-Pi)
-9. [Atmel Controller <-> PC via USB](README.md#Atmel-Controller-<->-PC-via-USB)
-10. [Communication with Modem (optional)](README.md#Communication-with-Modem-(optional))
-11. [Drive the LED from Raspberry](README.md#Drive-the-LED-from-Raspberry)
-12. [Firmware for the Atmel Controller](README.md#Firmware-for-the-Atmel-Controller)
+3. [Prepare the Debian](README.md#prepare-the-debian)
+4. [Enable UART to GPIO](README.md#enable-uart-to-gpio)
+5. [Add the Driver for the SPI UART](README.md#add-the-driver-for-the-spi-uart)
+6. [Add a driver for the SPI Ethernet controller](README.md#add-a-driver-for-the-spi-ethernet-controller)
+7. [Communication with the Atmel Controller](README.md#communication-with-the-atmel-controller)
+8. [Atmel Controller <-> Raspberry Pi](README.md#atmel-controller-<->-raspberry-pi)
+9. [Atmel Controller <-> PC via USB](README.md#atmel-controller-<->-pc-via-usb)
+10. [Communication with Modem (optional)](README.md#communication-with-modem-(optional))
+11. [Drive the LED from Raspberry](README.md#drive-the-led-from-raspberry)
+12. [Firmware for the Atmel Controller](README.md#firmware-for-the-atmel-controller)
 
 
 ## Documentation
@@ -30,7 +32,8 @@ The default firmware will debounce the inputs and send changes and a change coun
 Please see here for a description of the firmware:  
 [https://github.com/andino-systems/Andino-X2/tree/master/src/firmware](https://github.com/andino-systems/Andino-X2/tree/master/src/firmware)
   
-The Inputs are calculated for 24 Volt Input.  
+The Inputs are calculated for ****24 Volt**** Input.  
+
 ![Andino X2 - digital input schematics](digital-input-schematics.png)
 
 The Inputs can be driven by an external power supply (active mode) or with a "dry contact" with the internal voltage.   
@@ -195,7 +198,7 @@ The initial firmware installed on the X2 and the settings can be found here:
 ### Drive the LED from Raspberry
 
 The six LED in the Lid are RGB WS2812. There are driven by the GPIO 18.  
-***Please note: Drive the LED with a maximim brightness if 50% (Value 128)!***     
+***Please note: Drive the LED with a maximim brightness of 50% (Value 128)!***     
 You can drive the left three LED from the Raspberry and the three left from the Atmel.  
 If you short cut the Jumper J1 you be able to controll all six LED from the Raspberry.
 ![Andino X2 - Arduino with Atmel](andino-x2-led.png)
@@ -229,6 +232,10 @@ change the LED COUNT and the LED GPIO and the Brightness:
     LED_BRIGHTNESS = 128 # Set to 0 for darkest and 255 for brightest
     LED_INVERT = 0  # Set to 1 to invert the LED signal, good if using NPN
     
+Test
+
+    sudo python lowlevel.py
+	
 You will find an example of how to drive the LED from the Atmel in the [Firmware section](https://github.com/andino-systems/Andino-X2/tree/master/src/firmware)
 
 ----------
