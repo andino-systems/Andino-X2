@@ -1,35 +1,47 @@
-//--------------------------------------------------------------------------------------------
 //
-//        ___      .__   __.  _______   __  .__   __.   ______      ___   ___  ___   
-//       /   \     |  \ |  | |       \ |  | |  \ |  |  /  __  \     \  \ /  / |__ \  
-//      /  ^  \    |   \|  | |  .--.  ||  | |   \|  | |  |  |  |     \  V  /     ) | 
-//     /  /_\  \   |  . `  | |  |  |  ||  | |  . `  | |  |  |  |      >   <     / /  
-//    /  _____  \  |  |\   | |  '--'  ||  | |  |\   | |  `--'  |     /  .  \   / /_  
-//   /__/     \__\ |__| \__| |_______/ |__| |__| \__|  \______/     /__/ \__\ |____| 
+//    ###    ##    ## ########  ##     ## #### ##    ##  #######     ##     ##  #######  
+//   ## ##   ###   ## ##     ## ##     ##  ##  ###   ## ##     ##     ##   ##  ##     ## 
+//  ##   ##  ####  ## ##     ## ##     ##  ##  ####  ## ##     ##      ## ##          ## 
+// ##     ## ## ## ## ##     ## ##     ##  ##  ## ## ## ##     ##       ###     #######  
+// ######### ##  #### ##     ## ##     ##  ##  ##  #### ##     ##      ## ##   ##        
+// ##     ## ##   ### ##     ## ##     ##  ##  ##   ### ##     ##     ##   ##  ##        
+// ##     ## ##    ## ########   #######  #### ##    ##  #######     ##     ## #########
 //
-// Please install https://github.com/MCUdude/MightyCore
-// Docu:          https://github.com/andino-systems/Andino-X2/tree/master/src/firmware
+// Default Firmware
+//  
+//$Rev:: 872                  $:  Revision of last commit.
+//$Author:: marcus            $:  Author of last commit.
+//$Date:: 2018-05-18 13:14:20#$:  Date of last commit.
 //
-// Use:	 
-//       Boards:          MightyCore/ATmega164
-//       Pinout:          Standard
-//       Clock:           12 MHz external
-//       Compiler LTO:    Disabled
-//       Variant:         164P / 164 PA
-//       BOD:             2.7 Volt
+// see: https://github.com/andino-systems/Andino-X2/tree/master/src/firmware 
 //
-//       Baudrate:        38400
+// Baudrate 38400
 //
-// Version 1 from 16.03.2018
+// Commands:
 //
-//  V1: Initial
-//
-//--------------------------------------------------------------------------------------------
+// RESET          ( Restart controller)
+// INFO           ( print settings)
+// HARD           ( Hardware, 0=noShield, 1=1DI2DO, 2=3DI)
+// POLL 10        ( Poll cycle in ms )
+// DEBO 3         ( Debounce n Scans stable to accept )
+// SKIP 3         ( Skip n Scans after pulse reconized )
+// EDGE 1|0       ( count on Edge HL or LH )
+// SEND 5000      ( send all xxx ms )
+// REL1 0|1       ( set releais 1 to on or off )
+// REL2 0|1       ( set releais 2 to on or off )
+// REL3 0|1       ( set releais 3 to on or off )
+// REL4 0|1       ( set releais 4 to on or off )
+// RPU1 1000      ( pulse relais 1 for nnn ms )
+// RPU2 1000      ( pulse relais 2 for nnn ms )
+// RPU3 1000      ( pulse relais 3 for nnn ms )
+// RPU4 1000      ( pulse relais 4 for nnn ms )
+// LED1 123       ( set LED1 to R=1,G=2,B=3 )
+
 
 #include <EEPROM.h>
 #include "TimerOne.h"
 #include <avr/wdt.h>
-#include <NeoPixelBus.h>
+#include <Adafruit_NeoPixel.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -41,17 +53,17 @@
 #define IN_3_PIN   29
 #define SWITCH_PIN 30
 
-#define POWER_OUT_PIN   3 // PB3: & Power Out
-#define RELAY_1_PIN     0 // PB0: Rel 1
-#define RELAY_2_PIN     1 // PB1: Rel 2
-#define RELAY_3_PIN     2 // PB2: Rel 3
+#define OUT_1     0 // PB0: Rel 1
+#define OUT_2     1 // PB1: Rel 2
+#define OUT_3     2 // PB2: Rel 3
+#define OUT_4     3 // PB3: & Power Out
 
 #define LF 10
 #define CR 13
 
 #define BAUD_RATE 38400
 
-NeoPixelBus<NeoRgbFeature, Neo400KbpsMethod> strip(3, LED_PIN);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(3, LED_PIN, NEO_RGB  + NEO_KHZ800);
 OneWire oneWire(PIN_WIRE);
 DallasTemperature sensors(&oneWire);
 
@@ -92,29 +104,28 @@ int ledState = LOW;
 
 typedef struct {
   byte puls_timer  = 0;
-} RelayControl;
+} RelaisControl;
 
-RelayControl PowerRelay;
-RelayControl Relay1;
-RelayControl Relay2;
-RelayControl Relay3;
+RelaisControl Relais1;
+RelaisControl Relais2;
+RelaisControl Relais3;
+RelaisControl Relais4;
 
 void setup() 
 {
   Serial.begin(BAUD_RATE);
 
-  memset( &PowerRelay, 0, sizeof( RelayControl ) );
-  memset( &Relay1, 0, sizeof( RelayControl ) );
-  memset( &Relay2, 0, sizeof( RelayControl ) );
-  memset( &Relay3, 0, sizeof( RelayControl ) );
+  memset( &Relais1, 0, sizeof( RelaisControl ) );
+  memset( &Relais2, 0, sizeof( RelaisControl ) );
+  memset( &Relais3, 0, sizeof( RelaisControl ) );
+  memset( &Relais4, 0, sizeof( RelaisControl ) );
 
   SetupRead();
   pinMode(LED_PIN, OUTPUT);
   setup_in_out();
 
-  strip.Begin();
+  strip.begin();
   sensors.begin();
-  strip.Show();
 
   setup_interrupt();
 
@@ -127,14 +138,14 @@ void setup_in_out()
   pinMode(IN_2_PIN,INPUT); 
   pinMode(IN_3_PIN,INPUT); 
 
-  pinMode(POWER_OUT_PIN,OUTPUT);
-  pinMode(RELAY_1_PIN,OUTPUT); 
-  pinMode(RELAY_2_PIN,OUTPUT);
-  pinMode(RELAY_3_PIN,OUTPUT);
-  digitalWrite(POWER_OUT_PIN, LOW); 
-  digitalWrite(RELAY_1_PIN, LOW); 
-  digitalWrite(RELAY_2_PIN, LOW); 
-  digitalWrite(RELAY_3_PIN, LOW); 
+  pinMode(OUT_1,OUTPUT);
+  pinMode(OUT_2,OUTPUT); 
+  pinMode(OUT_3,OUTPUT);
+  pinMode(OUT_4,OUTPUT);
+  digitalWrite(OUT_1, LOW); 
+  digitalWrite(OUT_2, LOW); 
+  digitalWrite(OUT_3, LOW); 
+  digitalWrite(OUT_4, LOW); 
 }
 
 void setup_interrupt()
@@ -160,7 +171,7 @@ void loop()
     lastSendMillis = currentMillis;
     Serial.write( ':' );
     PrintHex16(++loopCounter); 
-    Serial.write( '{0000,' );
+    Serial.write( "{0000," );
     PrintHex16(Counter1.Counter); 
     Serial.write( ',' );
     PrintHex16(Counter2.Counter);
@@ -181,36 +192,36 @@ void loop()
   if (currentMillis - lastSecondMillis  >= 1000) 
   {
     lastSecondMillis = currentMillis;
-    if( PowerRelay.puls_timer != 0 )
+    if( Relais1.puls_timer != 0 )
     {
-      if( --PowerRelay.puls_timer == 0 )
+      if( --Relais1.puls_timer == 0 )
       {
-        digitalWrite(POWER_OUT_PIN, 0);
-        Serial.println( "POWR 0" );
-      }
-    }
-    if( Relay1.puls_timer != 0 )
-    {
-      if( --Relay1.puls_timer == 0 )
-      {
-        digitalWrite(RELAY_1_PIN, 0);
+        digitalWrite(OUT_1, 0);
         Serial.println( "REL1 0" );
       }
     }
-    if( Relay2.puls_timer != 0 )
+    if( Relais2.puls_timer != 0 )
     {
-      if( --Relay2.puls_timer == 0 )
+      if( --Relais2.puls_timer == 0 )
       {
-        digitalWrite(RELAY_2_PIN, 0);
+        digitalWrite(OUT_2, 0);
         Serial.println( "REL2 0" );
       }
     }
-    if( Relay3.puls_timer != 0 )
+    if( Relais3.puls_timer != 0 )
     {
-      if( --Relay3.puls_timer == 0 )
+      if( --Relais3.puls_timer == 0 )
       {
-        digitalWrite(RELAY_3_PIN, 0);
+        digitalWrite(OUT_3, 0);
         Serial.println( "REL3 0" );
+      }
+    }
+    if( Relais4.puls_timer != 0 )
+    {
+      if( --Relais4.puls_timer == 0 )
+      {
+        digitalWrite(OUT_4, 0);
+        Serial.println( "REL4 0" );
       }
     }
   }
@@ -318,9 +329,8 @@ void ledShowValue( byte p, int v )
 }
 void ledShow( byte p, byte r, byte g, byte b )
 {
-RgbColor c(r,g,b);
-      strip.SetPixelColor(p, c); 
-      strip.Show();
+      strip.setPixelColor(p, strip.Color(r,g,b)); 
+      strip.show();
 }
 
 // ----------------------------------------------------------------------------------
@@ -355,24 +365,6 @@ void DoCheckRxData()
 // ----------------------------------------------------------------------------------
 // C O M M A N D S
 // ----------------------------------------------------------------------------------
-// RESET          ( Restart controller)
-// INFO           ( print settings)
-// HARD           ( Hardware, 0=noShield)
-// POLL 10        ( Poll cycle in ms )
-// DEBO 3         ( Debounce n Scans stable to accept )
-// SKIP 3         ( Skip n Scans after pulse reconized )
-// EDGE 1|0       ( count on Edge HL or LH )
-// SEND 5000      ( send all xxx ms )
-// REL1 0|1       ( set relay 1 to on or off )
-// REL2 0|1       ( set relay 2 to on or off )
-// REL3 0|1       ( set relay 3 to on or off )
-// POWR 0|1       ( set Power relay to on or off )
-// RPU1 1000      ( pulse relay 1 for nnn ms )
-// RPU2 1000      ( pulse relay 2 for nnn ms )
-// RPU3 1000      ( pulse relay 3 for nnn ms )
-// PPWR 1000      ( pulse power relay for nnn ms )
-// LED1 123       ( set LED1 to R=1,G=2,B=3 )
-// TEMP			  ( request the Temperature)
 void OnDataReceived()
 {
   bool result = false;
@@ -396,6 +388,7 @@ void OnDataReceived()
   if( cmd.startsWith("TEMP"))
   { 
       sensors.requestTemperatures();
+      Serial.print("TEMP:"); 
       Serial.println(sensors.getTempCByIndex(0)); 
       result = true;
   }
@@ -473,21 +466,11 @@ void OnDataReceived()
       writeSetup = true;
     }
     else
-    if( cmd.startsWith("POWR "))
-    {
-      if( !checkRange( value, 0, 1 ) )
-        return;
-      digitalWrite(POWER_OUT_PIN, value);
-      Serial.print( "REL1 ");
-      Serial.println( value, DEC );
-      result = true;
-    }
-    else
     if( cmd.startsWith("REL1 "))
     {
       if( !checkRange( value, 0, 1 ) )
         return;
-      digitalWrite(RELAY_1_PIN, value);
+      digitalWrite(OUT_1, value);
       Serial.print( "REL1 ");
       Serial.println( value, DEC );
       result = true;
@@ -497,7 +480,7 @@ void OnDataReceived()
     {
       if( !checkRange( value, 0, 1 ) )
         return;
-      digitalWrite(RELAY_2_PIN, value);
+      digitalWrite(OUT_2, value);
       Serial.print( "REL2 ");
       Serial.println( value, DEC );
       result = true;
@@ -507,30 +490,28 @@ void OnDataReceived()
     {
       if( !checkRange( value, 0, 1 ) )
         return;
-      digitalWrite(RELAY_3_PIN, value);
+      digitalWrite(OUT_3, value);
       Serial.print( "REL3 ");
       Serial.println( value, DEC );
       result = true;
     }
     else
-    if( cmd.startsWith("PPWR "))
+    if( cmd.startsWith("REL4 "))
     {
-      if( !checkRange( value, 1, 255 ) )
+      if( !checkRange( value, 0, 1 ) )
         return;
-      digitalWrite(POWER_OUT_PIN, 1);
-      PowerRelay.puls_timer = value;
-      Serial.print( "PPWR ");
+      digitalWrite(OUT_4, value);
+      Serial.print( "REL4 ");
       Serial.println( value, DEC );
-      Serial.println( "POWR 1" );
       result = true;
     }
     else
     if( cmd.startsWith("RPU1 "))
     {
-      if( !checkRange( value, 0, 255 ) )
+      if( !checkRange( value, 1, 255 ) )
         return;
-      digitalWrite(RELAY_1_PIN, 1);
-      Relay1.puls_timer = value;
+      digitalWrite(OUT_1, 1);
+      Relais1.puls_timer = value;
       Serial.print( "RPU1 ");
       Serial.println( value, DEC );
       Serial.println( "REL1 1" );
@@ -539,10 +520,10 @@ void OnDataReceived()
     else
     if( cmd.startsWith("RPU2 "))
     {
-      if( !checkRange( value, 1, 255 ) )
+      if( !checkRange( value, 0, 255 ) )
         return;
-      digitalWrite(RELAY_2_PIN, 1);
-      Relay2.puls_timer = value;
+      digitalWrite(OUT_2, 1);
+      Relais2.puls_timer = value;
       Serial.print( "RPU2 ");
       Serial.println( value, DEC );
       Serial.println( "REL2 1" );
@@ -551,13 +532,25 @@ void OnDataReceived()
     else
     if( cmd.startsWith("RPU3 "))
     {
-      if( !checkRange( value, 0, 255 ) )
+      if( !checkRange( value, 1, 255 ) )
         return;
-      digitalWrite(RELAY_3_PIN, 1);
-      Relay3.puls_timer = value;
+      digitalWrite(OUT_3, 1);
+      Relais3.puls_timer = value;
       Serial.print( "RPU3 ");
       Serial.println( value, DEC );
       Serial.println( "REL3 1" );
+      result = true;
+    }
+    else
+    if( cmd.startsWith("RPU4 "))
+    {
+      if( !checkRange( value, 0, 255 ) )
+        return;
+      digitalWrite(OUT_4, 1);
+      Relais4.puls_timer = value;
+      Serial.print( "RPU4 ");
+      Serial.println( value, DEC );
+      Serial.println( "REL4 1" );
       result = true;
     }
     else
@@ -597,16 +590,14 @@ void OnDataReceived()
 
 void DoCmdInfo()
 {
-    Serial.print( "HARD "); Serial.println( TheSetup.Shield, DEC );
+//    Serial.print( "HARD "); Serial.println( TheSetup.Shield, DEC );
     Serial.print( "POLL "); Serial.println( TheSetup.PollCycle, DEC );
     Serial.print( "DEBO "); Serial.println( TheSetup.PollCount, DEC );
     Serial.print( "SKIP "); Serial.println( TheSetup.SkipCount, DEC );
     Serial.print( "EDGE "); Serial.println(TheSetup.CountOnLH, DEC );
     Serial.print( "SEND "); Serial.println( TheSetup.SendCycle, DEC);
-    Serial.print( "POWR "); Serial.println( digitalRead(POWER_OUT_PIN), DEC);
-    Serial.print( "REL1 "); Serial.println( digitalRead(RELAY_1_PIN), DEC);
-    Serial.print( "REL2 "); Serial.println( digitalRead(RELAY_1_PIN), DEC);
-    Serial.print( "REL3 "); Serial.println( digitalRead(RELAY_1_PIN), DEC);
+    Serial.print( "REL1 "); Serial.println( digitalRead(OUT_1), DEC);
+    Serial.print( "REL2 "); Serial.println( digitalRead(OUT_2), DEC);
 //    Serial.println( "HARD 0 (no extension)" );
 //    Serial.println( "HARD 1 (1DI2DO)" );
 //    Serial.println( "HARD 2 (2DO)" );
