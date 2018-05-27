@@ -17,7 +17,7 @@ Tabe of Content
 11. [Drive the LED from Raspberry](README.md#drive-the-led-from-raspberry)
 12. [Firmware for the Atmel Controller](README.md#firmware-for-the-atmel-controller)
 13. [Setup the 2G / EDGE Driver SIMCom800L](README.md#setup-the-2g-edge-driver-simcom800l)
-13. [Schemaics of the Andino X2]()(README.md#schematics)
+13. [Schemaics of the Andino X2](README.md#schematics)
 
 
 ## Documentation
@@ -248,10 +248,10 @@ Please see here
 ----------
 ### Setup the 2G EDGE Driver SIMCom800L
 
+Open the Housing and insert the Micro SIM.
+![Andino X2 - Insert SIM Card](andino-x2-gsm.png)
+
 Remove PIN from SIM!
-* Use a reliable power supply with min. 2.5 Ampere
-* Use a short and good USB Power cable
-* Watch the Power LED at the SIM Module. This *must* keep on all the time - otherwise the powersupply is not good
 
 The Modem is connected to the internal UART of the Raspberry Pi.  
 The Reset Line of the Modem is connected to GPIO 17.
