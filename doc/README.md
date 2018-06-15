@@ -10,14 +10,15 @@ Tabe of Content
 4. [Enable UART to GPIO](README.md#enable-uart-to-gpio)
 5. [Add the Driver for the SPI UART](README.md#add-the-driver-for-the-spi-uart)
 6. [Add a driver for the SPI Ethernet controller](README.md#add-a-driver-for-the-spi-ethernet-controller)
-7. [Communication with the Atmel Controller](README.md#communication-with-the-atmel-controller)
-8. [Atmel Controller <-> Raspberry Pi](README.md#atmel-controller-<->-raspberry-pi)
-9. [Atmel Controller <-> PC via USB](README.md#atmel-controller-<->-pc-via-usb)
-10. [Communication with Modem (optional)](README.md#communication-with-modem-(optional))
-11. [Drive the LED from Raspberry](README.md#drive-the-led-from-raspberry)
-12. [Firmware for the Atmel Controller](README.md#firmware-for-the-atmel-controller)
-13. [Setup the 2G / EDGE Driver SIMCom800L](README.md#setup-the-2g-edge-driver-simcom800l)
-13. [Schemaics of the Andino X2](README.md#schematics)
+7. [Add the Driver for the RTC DS3231](README.md#add-the-driver-for-the-rtc-ds3231)
+8. [Communication with the Atmel Controller](README.md#communication-with-the-atmel-controller)
+9. [Atmel Controller <-> Raspberry Pi](README.md#atmel-controller-<->-raspberry-pi)
+10. [Atmel Controller <-> PC via USB](README.md#atmel-controller-<->-pc-via-usb)
+11. [Communication with Modem (optional)](README.md#communication-with-modem-(optional))
+12. [Drive the LED from Raspberry](README.md#drive-the-led-from-raspberry)
+13. [Firmware for the Atmel Controller](README.md#firmware-for-the-atmel-controller)
+14. [Setup the 2G / EDGE Driver SIMCom800L](README.md#setup-the-2g-edge-driver-simcom800l)
+15. [Schemaics of the Andino X2](README.md#schematics)
 
 
 ## Documentation
@@ -151,6 +152,97 @@ dtoverlay=enc28j60
     TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
     device interrupt 191
     
+#### Add the Driver for the RTC DS3231
+
+Enable I2C and add the Module the RTC DS3231
+
+	sudo nano /boot/config.txt
+uncomment dtparam=i2c_arm=on and add the dtoverlay=i2c-rtc,ds3231
+
+	dtparam=i2c_arm=on
+	#dtparam=i2s=on
+	#dtparam=spi=on
+	dtoverlay=i2c-rtc,ds3231
+
+Execute this
+
+	sudo -s
+	chmod +x /etc/rc.local 
+	apt-get install -y i2c-tools
+	apt-get purge -y fake-hwclock 
+	apt-get remove fake-hwclock -y 
+	dpkg --purge fake-hwclock 
+	rm -f /etc/adjtime. 
+	cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+	ln -s /home/pi/bin/ntp2hwclock.sh /etc/cron.hourly/ntp2hwclock
+	sudo reboot now
+
+After reboot test this RTC
+
+	pi@raspberrypi:~ $ i2cdetect -y 1
+
+	     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+	00:          -- -- -- -- -- -- -- -- -- -- -- -- --
+	10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	60: -- -- -- -- -- -- -- -- 68 -- -- -- -- -- -- --
+	70: -- -- -- -- -- -- -- --
+	pi@raspberrypi:~ $
+
+	hwchwclock -w
+	hwclock -r
+
+This Python script sets the NTP Time to the HWClock as long a NTP connection can established.
+Place this script at /home/pi/bin/ntp2hwclock.sh (for example, see above)
+
+	#!/bin/bash
+	# Location of logfile
+	LOGFILE="/usr/local/oeebox/etc/log/ntp.log"
+	if [ ! -f $LOGFILE ]; then
+	  touch $LOGFILE
+	fi
+	# Set the maximum allowed difference in seconds between Hw-Clock and Sys-Clock
+	maxDiffSec="2"
+	msgNoConnection="No connection to time-server"
+	msgConnection="Connection to time-server"
+	# Check for NTP connection
+	if ( ntpq -p | grep -q "^*"  ); then
+	        echo $msgConnection >> $LOGFILE
+	        echo "---------------------------------"  >> $LOGFILE
+	        secHwClock=$(sudo hwclock --debug | grep "^Hw clock time" | awk '{print $(NF-3)}')
+	        echo "HwClock: $secHwClock sec" >> $LOGFILE
+	        secSysClock=$(date +"%s")
+	        echo "SysClock: $secSysClock sec" >> $LOGFILE
+	        echo "---------------------------------" >> $LOGFILE
+	        secDiff=$(($secHwClock-$secSysClock))
+	        # Compute absolute value
+	        if ( echo $secDiff | grep -q "-" ); then
+	            secDiff=$(echo $secDiff | cut -d "-" -f 2)
+	        fi
+	        echo "Difference: $secDiff sec" >> $LOGFILE
+	        msgDiff="HwClock difference: $secDiff sec"
+	        if [ "$secDiff" -gt "$maxDiffSec" ] ; then
+	                echo "---------------------------------" >> $LOGFILE
+	                echo "The difference between Hw- and Sys-Clock is more than $maxDiffSec sec." >> $LOGFILE
+	                echo "Hw-Clock will be updated" >> $LOGFILE
+	                # Update hwclock from system clock
+	                sudo hwclock -w
+	                msgDiff="$msgDiff --> HW-Clock updated." >> $LOGFILE
+	        fi
+	        if !(awk '/./{line=$0} END{print line}' $LOGFILE | grep -q "$msgConnection") || [ "$secDiff" -gt "$maxDiffSec" ]; then
+	                echo $(date)": "$msgConnection". "$msgDiff >> $LOGFILE
+	        fi
+	else
+	        # No NTP connection
+	        echo $msgNoConnection
+	        if !(awk '/./{line=$0} END{print line}' $LOGFILE | grep -q "$msgNoConnection"); then
+	                echo $(date)": $msgNoConnection" >> $LOGFILE
+	        fi
+	fi
+
 ----------
 ### Communication with the Atmel Controller
 
