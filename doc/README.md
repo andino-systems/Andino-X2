@@ -2,7 +2,7 @@
 
 Homepage of [Andino X2](https://andino.systems/andino-x2/)
 
-Tabe of Content   
+Tabe of Content
    
 1. [Digital inputs](README.md#digital-inputs)
 2. [Relay outputs](README.md#relay-output)
