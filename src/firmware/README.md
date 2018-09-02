@@ -170,7 +170,7 @@ Create test.py and run with python test.py
 Author
 -----
 
-* 2017 by [AndinoSystems][2]
+* 2018 by [AndinoSystems][2]
 * [Contact us by email](mailto:info@andino.systems)
 
 [1]:https://andino.systems/andino-x1/

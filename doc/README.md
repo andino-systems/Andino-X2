@@ -87,7 +87,7 @@ The second  channnel of the SPI UART is used to communicate with the Atmel Contr
 
     cd ~/
     wget https://github.com/andino-systems/Andino-X2/raw/master/src/sc16is752-spi0-ce1.dtbo
-    sudo cp sc16is752-spi0-ce1.dtbo /boot/
+    sudo cp sc16is752-spi0-ce1.dtbo /boot/overlays/
     sudo nano /boot/config.txt
 Add or uncomment this  
 
