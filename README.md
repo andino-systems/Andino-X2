@@ -1,3 +1,9 @@
+This is the old repository of the Andino-X1. For up-to-date documentation, please refer to the [Andino-X2 section](https://github.com/andino-systems/Andino/tree/master/Andino-X2) in the new Andino repository.
+====
+
+
+------
+
 Andino X2
 ==========
 
